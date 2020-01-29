@@ -7,20 +7,23 @@ use std::fs::File;
 
 
 
+pub fn device_list (){
+    let devices: Vec<String> = Device::list().unwrap().iter().map(|val| val.name.clone()).collect();
+    println!("Available interfaces : ");
+    devices.iter().for_each(|val| println!("* {}", val));
+}
+
+
 pub fn write_packet_to_file(file_name: &str) {
-    let mut stream_file = File::create(file_name).unwrap();
-    stream_file = OpenOptions::new()
-        .write(true)
-        .append(true)
-        .open(file_name)
-        .unwrap();
     let main_device = Device::lookup().unwrap();
     let mut cap = Capture::from_device(main_device)
         .unwrap()
         .open()
         .unwrap();
+    let mut stream_file = Capture::savefile(&cap,file_name)
+        .unwrap();
     while let Ok(packet) = cap.next() {
-        stream_file.write_all(&packet)
-            .unwrap();
+        stream_file.write(&packet);
     }
 }
+
