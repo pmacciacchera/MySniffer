@@ -5,7 +5,7 @@ use pktparse::ipv6::{ parse_ipv6_header};
 use pktparse::ip::IPProtocol;
 use pktparse::tcp::{TcpHeader, parse_tcp_header, TcpOption};
 use pktparse::udp::{UdpHeader, parse_udp_header};
-use dns_parser::{Packet, ResourceRecord};
+use dns_parser::{Packet, ResourceRecord, Name};
 use rtp_rs::*;
 //use sipmsg::*;
 use httparse::{ parse_chunk_size, parse_headers, Status};
@@ -15,9 +15,10 @@ use std::net::Ipv6Addr;
 use pktparse::ethernet::MacAddress;
 
 
+
 #[derive(Debug)]
 pub enum Info<'a>{
-	Ether(String),
+	Ether(EtherType),
 	IPv4(u8),
 	IPv6(u8),
 	UDP(u16),
@@ -25,7 +26,8 @@ pub enum Info<'a>{
 	TLS(TlsRecordType),
 	HTTP(Status<(usize, u64)>),
 	HTTPheader(String),
-	DNS(Vec<ResourceRecord<'a>>),
+	DNSnameserver(Vec<ResourceRecord<'a>>),
+	DNS(Name<'a>),
 	RTP(u8),
 	//SIP(Vec<SipHeader<'a>>),
 	ARP(Operation),
@@ -89,7 +91,7 @@ impl <'a> Parser<'a> {
                 		actualpacket
               		}
               		_ => {
-						  let mut actualpacket = ParsedPacket::new( "Ethernet".to_string() /*String::from(networkacces.ethertype)*/, Info::Ether("".to_string()));
+						  let mut actualpacket = ParsedPacket::new( "Ethernet".to_string(), Info::Ether(networkacces.ethertype));
                         actualpacket.set_addr( Address::MAC(networkacces.source_mac), Address::MAC(networkacces.dest_mac));
                         Ok(actualpacket)
               		}
@@ -272,8 +274,14 @@ impl <'a> Parser<'a> {
     	//parse DNS level 7
     	match Packet::parse(data){
         	Ok(application) => {
-                let actualpacket = ParsedPacket::new( "DNS".to_string(), Info::DNS(application.nameservers));
-                Ok(actualpacket)
+				if application.header.questions != 0{
+					let actualpacket = ParsedPacket::new( "DNS".to_string(), Info::DNS(application.questions.first().unwrap().qname));
+                	Ok(actualpacket)
+				} else {
+					let actualpacket = ParsedPacket::new( "DNS".to_string(), Info::DNSnameserver(application.nameservers));
+                	Ok(actualpacket)
+				}
+                
         	}
         	Err(_err) => {
 				let actualpacket = ParsedPacket::new( "UDP".to_string(), Info::UDP(transport.checksum));
@@ -305,7 +313,7 @@ impl <'a> Parser<'a> {
                 Ok(actualpacket)
         	}
         	Err(_err) => {
-				let actualpacket = ParsedPacket::new( "Ether".to_string(), Info::Ether("".to_string()));
+				let actualpacket = ParsedPacket::new( "Ether".to_string(), Info::IPv4(99));
                 Ok(actualpacket)
 			}
     	}

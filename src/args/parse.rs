@@ -15,13 +15,8 @@ impl<'a, 'b> ParseSubcommand {
                 .takes_value(true)
                 .short("s")
                 .long("savefile"),
-            Arg::with_name("deep")
-                .help("Show more information about a parsed packet.")
-                .takes_value(true)
-                .long("deep")
-                .short("d"),
             Arg::with_name("number")
-                .help("Choose the number of the packet.")
+                .help("Choose the number of the packet to show more information.")
                 .takes_value(true)
                 .long("number")
                 .short("n"),
@@ -55,11 +50,16 @@ impl<'a, 'b> ParseSubcommand {
                     capture_from_file(name, number, save_file_path);
                 }
             } 
-        }
-        if let Some(val) = args.value_of("protocol") {
-            let protocol = val;
-            if let Some(name) = args.value_of("file_name") {    
-                choose_protocol(name, protocol, save_file_path);
+        }else {
+            if let Some(val) = args.value_of("protocol") {
+                let protocol = val;
+                if let Some(name) = args.value_of("file_name") {    
+                    choose_protocol(name, protocol, save_file_path);
+                }
+            } else {
+                if let Some(name) = args.value_of("file_name") {
+                    parse_file(name, save_file_path);
+                }
             }
         }
             

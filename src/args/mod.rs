@@ -34,9 +34,9 @@ pub fn parse_arguments() {
             
             if let Some(handle) = run_args.value_of("device") {
                 //cambio device;
-                device = get_default_device();
+                device = handle;
             } else {
-                device = get_default_device();
+                device = "get_default_device";
             }
 
             let Start = CaptureDevice.finalize();

@@ -9,6 +9,7 @@ use std::fs::File;
 
 
 
+
 pub struct  CaptureBuilder {
     promisc_parameter: bool,
     timeout_parameter: i32,
@@ -80,22 +81,34 @@ impl StartCapture {
         self.snaplen_parameter
     }
 
-    fn active_capture(initialized_capture: StartCapture, device: Device) -> Capture<Active> {
-        let mut start_capture = Capture::from_device(device).unwrap()
+    fn active_capture(initialized_capture: StartCapture, device: &str) -> Capture<Active> {
+        let start_capture;
+        if device != "get_default_device" {
+            start_capture = Capture::from_device(device).unwrap()
+            .promisc(initialized_capture.get_promisc_parameter())
+            .snaplen(initialized_capture.get_snaplen_parameter())
+            .timeout(initialized_capture.get_timeout_parameter())
+            .buffer_size(initialized_capture.get_buffer_size_parameter())
+            .open().unwrap();   
+        } else {
+            let dev = get_default_device();
+            start_capture = Capture::from_device(dev).unwrap()
             .promisc(initialized_capture.get_promisc_parameter())
             .snaplen(initialized_capture.get_snaplen_parameter())
             .timeout(initialized_capture.get_timeout_parameter())
             .buffer_size(initialized_capture.get_buffer_size_parameter())
             .open().unwrap();
+        }
         return start_capture
     }
 }
 
 // capture live in streaming without saving packet to file
-pub fn streaming_capture(mut initialized_capture: StartCapture, device: Device) {
-    print_coloums();
+pub fn streaming_capture(mut initialized_capture: StartCapture, device: &str) {
+    println!("{:?} \n", device);
     let mut start_capture = StartCapture::active_capture(initialized_capture, device);
     let mut k = 1;
+    print_coloums();
     while let Ok(packet) = start_capture.next() {
         let parser = lightParser::new(packet.data);
         let parsedPacket = parser.parse_packet().unwrap();
@@ -107,12 +120,13 @@ pub fn streaming_capture(mut initialized_capture: StartCapture, device: Device) 
     }
 }
 
-pub fn capture_to_file(mut initialized_capture: StartCapture, device: Device, filename: &str) {
-    print_coloums();
+pub fn capture_to_file(mut initialized_capture: StartCapture, device: &str, filename: &str) {
+    println!("{:?} \n", device);
     let mut start_capture = StartCapture::active_capture(initialized_capture, device);
     let mut stream_file = Capture::savefile(&start_capture, filename)
         .unwrap();
     let mut k = 1;
+    print_coloums();
     while let Ok(packet) = start_capture.next() {
         stream_file.write(&packet);
         let parser = lightParser::new(packet.data);
@@ -132,10 +146,8 @@ pub fn capture_from_file(filename: &str, numero: i32, save_path: Option<&str>) {
         if c == numero {
             let parser = Parser::new(packet.data);
             let parsedPacket = parser.parse_packet().unwrap();
-            println!(
-                "{:#?} | {:#?} | {:#?} | {:#?} | {:#?} |",
-                parsedPacket.Networkacceslayer, parsedPacket.Internetlayer, parsedPacket.Transportlayer, parsedPacket.Presentationlayer, parsedPacket.Applicationlayer
-            );
+            parsedPacket.dump();
+
         }
         
         c = c + 1;

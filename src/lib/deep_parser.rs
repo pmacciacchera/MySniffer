@@ -69,7 +69,7 @@ impl <'a> ParsedPacket<'a>{
       	println!("{:?} \n",self.Internetlayer);
       	println!("{:?} \n",self.Transportlayer);
       	println!("{:?} \n",self.Presentationlayer);
-      	println!("{:?} \n\n\n\n\n",self.Applicationlayer);
+      	println!("{:#?} \n\n\n\n\n",self.Applicationlayer);
   	}
 }
 
