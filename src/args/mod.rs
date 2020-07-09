@@ -4,16 +4,11 @@ mod parse;
 use clap::{crate_authors, crate_description, crate_name, crate_version, App};
 use pcap::{Capture, Device};
 
-use crate::args::capture::CaptureSubcommand;
+use crate::args::capture::{CaptureSubcommand};
 use crate::args::parse::ParseSubcommand;
 use crate::lib::packet_capture::*;
-use std::cell::RefCell;
 
-fn print_default_device(name: String) {
-    println!("{:-^1$}", "-", 20,);
-    println!("Sniffing  {}", name);
-    println!("{:-^1$} \n\n", "-", 20,);
-}
+
 
 pub fn parse_arguments() {
     let capture_subcommand = CaptureSubcommand::new();
@@ -34,39 +29,21 @@ pub fn parse_arguments() {
         if sub.subcommand_matches("list").is_some() {
             device_list();
         } else if let Some(run_args) = sub.subcommand_matches("run") {
-            let device = Capture::from_device(Device::lookup().unwrap());
-
-            match run_args.value_of("device") {
-                Some(choose) => {
-                    let device = Capture::from_device(choose);
-                }
-                None => {
-                    let capture_device = Device::lookup().unwrap();
-                    print_default_device(capture_device.name.clone());
-                    let device = Capture::from_device(capture_device);
-                }
-            }
+            let CaptureDevice = capture_subcommand.set_args(run_args);
+            let device;
             
-
-            /*match device {
-                Ok(device) => {
-                    //let device = RefCell::new(device);
-                    //let device = capture_subcommand.run_args(device, run_args);
-                    if let Some(val) = run_args.value_of("timeout") {
-                        device = device.timeout(val.parse().unwrap());
-                        let device = RefCell::new(device);
-                        capture_subcommand.start(device, run_args);
-                    }                    
-                }
-                Err(err) => {
-                    eprintln!("{}", err.to_string());
-                }
-            }*/
-
-            if let Some(val) = run_args.value_of("savefile") {
-                write_packet_to_file(val);
+            if let Some(handle) = run_args.value_of("device") {
+                //cambio device;
+                device = get_default_device();
             } else {
-                print_to_console();
+                device = get_default_device();
+            }
+
+            let Start = CaptureDevice.finalize();
+            if let Some(file) = run_args.value_of("savefile") {
+                capture_to_file(Start,device,file);
+            } else {
+                streaming_capture(Start, device);
             }
             
         }

@@ -7,16 +7,14 @@ use pktparse::tcp::{TcpHeader, parse_tcp_header, TcpOption};
 use pktparse::udp::{UdpHeader, parse_udp_header};
 use dns_parser::{Packet, ResourceRecord};
 use rtp_rs::*;
-use sipmsg::*;
+//use sipmsg::*;
 use httparse::{ parse_chunk_size, parse_headers, Status};
 use tls_parser::tls::{ parse_tls_encrypted, parse_tls_plaintext, TlsRecordType};
 use std::net::Ipv4Addr;
 use std::net::Ipv6Addr;
 use pktparse::ethernet::MacAddress;
 
-pub struct Parser<'a>{
-	data: &'a[u8],
-}
+
 #[derive(Debug)]
 pub enum Info<'a>{
 	Ether(String),
@@ -29,7 +27,7 @@ pub enum Info<'a>{
 	HTTPheader(String),
 	DNS(Vec<ResourceRecord<'a>>),
 	RTP(u8),
-	SIP(Vec<SipHeader<'a>>),
+	//SIP(Vec<SipHeader<'a>>),
 	ARP(Operation),
 }
 #[derive(Debug)]
@@ -60,6 +58,10 @@ impl <'a> ParsedPacket<'a>{
         self.source = source_addr;
         self.destination = dest_addr;
     }
+}
+
+pub struct Parser<'a>{
+	data: &'a[u8],
 }
 
 impl <'a> Parser<'a> {
@@ -184,10 +186,10 @@ impl <'a> Parser<'a> {
                 		let actualpacket = self.parser_dns(dat, transport);
                 		actualpacket
             		}
-            		5060 => {
+            		/*5060 => {
               			let actualpacket = self.parser_sip(dat, transport);
               			actualpacket
-            		}
+            		}*/
             		_ => {
 						match transport.source_port {
                     		53 | 5353 => {
@@ -280,7 +282,7 @@ impl <'a> Parser<'a> {
     	}
   	}
 
-	fn parser_sip(&self, data: &'a[u8], transport: UdpHeader) -> Result<ParsedPacket<'a>, String> {
+    /*  fn parser_sip(&self, data: &'a[u8], transport: UdpHeader) -> Result<ParsedPacket<'a>, String> {
 		//parse SIP level 7
 		match parse_sip_headers(data){
 			Ok((_dat, application)) => {
@@ -292,7 +294,7 @@ impl <'a> Parser<'a> {
                 Ok(actualpacket)
 			}
 		}  
-	}
+	}*/
 
   	fn parser_arp(&self, data: &'a[u8]) -> Result<ParsedPacket<'a>, String> {
     	//parse ARP 

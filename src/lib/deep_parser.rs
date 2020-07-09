@@ -7,8 +7,8 @@ use pktparse::tcp::{TcpHeader, parse_tcp_header};
 use pktparse::udp::{UdpHeader, parse_udp_header};
 use dns_parser::Packet;
 use rtp_rs::*;
-use sipmsg::*;
-use httparse::{Header, parse_chunk_size, parse_headers};
+//use sipmsg::*;
+use httparse::{/*Header,*/ parse_chunk_size/*, parse_headers*/};
 //use snmp_parser::*;
 //use snmpv3_parser::*;
 use tls_parser::tls::{TlsPlaintext, parse_tls_plaintext};
@@ -40,18 +40,18 @@ pub enum ApplicationLayer<'a> {
 	HTTPheader(httparse::Status<(usize, &'a[httparse::Header<'a>])>),
   	HTTPchunck(httparse::Status<(usize, u64)>),
   	DNS(Packet<'a>),
-  	SIP(Vec<SipHeader<'a>>),
+  	//SIP(sipmsg::common::traits::NomParser::ParseResult),
 	ARP(ArpPacket),
 	RTP(RtpReader<'a>),
   	None,
 }
 
 pub struct ParsedPacket<'a>{
-  	Networkacceslayer: EthernetFrame,
-  	Internetlayer: InternetLayer,
-  	Transportlayer: TransportLayer,
-  	Presentationlayer: PresentationLayer<'a>,
-  	Applicationlayer: ApplicationLayer<'a>, 
+  	pub Networkacceslayer: EthernetFrame,
+  	pub Internetlayer: InternetLayer,
+  	pub Transportlayer: TransportLayer,
+  	pub Presentationlayer: PresentationLayer<'a>,
+  	pub Applicationlayer: ApplicationLayer<'a>, 
 }
 impl <'a> ParsedPacket<'a>{
   	pub fn new(networkacces: EthernetFrame, internet:  InternetLayer, transport:  TransportLayer, presentation: PresentationLayer<'a>, application:  ApplicationLayer<'a>) -> ParsedPacket<'a> {
@@ -203,10 +203,10 @@ impl <'a> Parser<'a> {
                 		let actualpacket = self.parser_dns(dat, networkacces, internet, transport);
                 		actualpacket
             		}
-            		5060 => {
+            		/*5060 => {
               			let actualpacket = self.parser_sip(dat, networkacces, internet, transport);
               			actualpacket
-            		}
+            		}*/
             		_ => {
 						match transport.source_port {
                     		53 => {
@@ -325,9 +325,9 @@ impl <'a> Parser<'a> {
     	}
   	}
 
-	fn parser_sip(&self, data: &'a[u8], networkacces: EthernetFrame, internet: InternetLayer, transport: UdpHeader) -> Result<ParsedPacket<'a>, String> {
+    /*	fn parser_sip(&self, data: &'a[u8], networkacces: EthernetFrame, internet: InternetLayer, transport: UdpHeader) -> Result<ParsedPacket<'a>, String> {
 		//parse SIP level 7
-		match parse_sip_headers(data){
+		match sipmsg::common::traits::NomParser::parse(data){
 			Ok((dat, application)) => {
 				let presentation = PresentationLayer::None;
 				let actualpacket = ParsedPacket::new(networkacces, internet, TransportLayer::UDP(transport), presentation, ApplicationLayer::SIP(application));
@@ -340,7 +340,7 @@ impl <'a> Parser<'a> {
 				Ok(actualpacket)
 			}
 		}  
-	}
+	}*/
 
   	fn parser_arp(&self, data: &'a[u8], networkacces: EthernetFrame) -> Result<ParsedPacket<'a>, String> {
     	//parse ARP 

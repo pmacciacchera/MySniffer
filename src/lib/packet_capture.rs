@@ -1,17 +1,14 @@
-/*
-* This file implement the packet capture in different variants *to complete*
-*
-* Author "Alessandro Recchia <recchiaalessandro0@gmail.com>
-*
-*/
-
 extern crate pcap;
 
 use pcap::{Active, Capture, Device};
+use crate::lib::deep_parser::{Parser,ParsedPacket};
+use crate::lib::light_parser::{ParsedPacket as lightPacket,Parser as lightParser, Address};
+use std::io;
+use std::io::prelude::*;
+use std::fs::File;
 
-/*
-* Initialize the capture with some useful parameters
-*/
+
+
 pub struct  CaptureBuilder {
     promisc_parameter: bool,
     timeout_parameter: i32,
@@ -29,7 +26,7 @@ impl CaptureBuilder  {
             snaplen_parameter: 65535,
         }
     }
-    pub fn set_promisc (&mut self, value: bool) -> &mut CaptureBuilder {
+    pub fn set_promisc(&mut self, value: bool) -> &mut CaptureBuilder {
         self.promisc_parameter=value;
         self
     }
@@ -39,16 +36,16 @@ impl CaptureBuilder  {
         self
     }
 
-    pub fn set_buffer_size (&mut self, value : i32) -> &mut CaptureBuilder {
+    pub fn set_buffer_size(&mut self, value : i32) -> &mut CaptureBuilder {
         self.buffer_size_parameter=value;
         self
     }
 
-    pub fn set_snaplen (&mut self, value : i32) -> &mut CaptureBuilder {
+    pub fn set_snaplen(&mut self, value : i32) -> &mut CaptureBuilder {
         self.snaplen_parameter= value;
         self
     }
-// finalize() create the StartCapture useful to start the packet capture with parameters
+    // finalize() create the StartCapture useful to start the packet capture with parameters
     pub fn finalize(&self) -> StartCapture {
         StartCapture {
             promisc_parameter: self.promisc_parameter,
@@ -92,29 +89,101 @@ impl StartCapture {
             .open().unwrap();
         return start_capture
     }
-// capture live in streaming without saving packet to file
-    pub fn streaming_capture(mut initialized_capture: StartCapture, device: Device) {
-        let mut start_capture = StartCapture::active_capture(initialized_capture, device);
-        while let Ok(packet) = start_capture.next() {
-            println!("{:?}",packet);
-        }
-    }
-
-    pub fn capture_to_file(mut initialized_capture: StartCapture, device: Device, filename: &str) {
-        let mut start_capture = StartCapture::active_capture(initialized_capture, device);
-        let mut stream_file = Capture::savefile(&start_capture, filename)
-            .unwrap();
-        while let Ok(packet) = start_capture.next() {
-            stream_file.write(&packet);
-        }
-    }
-
-    pub fn capture_from_file(mut initialized_capture: StartCapture, filename: &str) {
-        let mut start_capture = Capture::from_file(filename).unwrap();
-        while let Ok(packet) = start_capture.next() {}
-    }
-
 }
+
+// capture live in streaming without saving packet to file
+pub fn streaming_capture(mut initialized_capture: StartCapture, device: Device) {
+    print_coloums();
+    let mut start_capture = StartCapture::active_capture(initialized_capture, device);
+    let mut k = 1;
+    while let Ok(packet) = start_capture.next() {
+        let parser = lightParser::new(packet.data);
+        let parsedPacket = parser.parse_packet().unwrap();
+        println!(
+            "{} | {:?} | {:?} | {:#?} | {:?} | {:?} |",
+            k,parsedPacket.source, parsedPacket.source, packet.header.ts.tv_sec, parsedPacket.protocol, parsedPacket.info
+        );
+        k = k + 1;
+    }
+}
+
+pub fn capture_to_file(mut initialized_capture: StartCapture, device: Device, filename: &str) {
+    print_coloums();
+    let mut start_capture = StartCapture::active_capture(initialized_capture, device);
+    let mut stream_file = Capture::savefile(&start_capture, filename)
+        .unwrap();
+    let mut k = 1;
+    while let Ok(packet) = start_capture.next() {
+        stream_file.write(&packet);
+        let parser = lightParser::new(packet.data);
+        let parsedPacket = parser.parse_packet().unwrap();
+        println!(
+            "{} | {:?} | {:?} | {:#?} | {:?} | {:?} |",
+            k,parsedPacket.source, parsedPacket.source, packet.header.ts.tv_sec, parsedPacket.protocol, parsedPacket.info
+        );
+        k = k + 1;
+    }
+}
+
+pub fn capture_from_file(filename: &str, numero: i32, save_path: Option<&str>) {
+    let mut c = 1;
+    let mut start_capture = Capture::from_file(filename).unwrap();
+    while let Ok(packet) = start_capture.next() {
+        if c == numero {
+            let parser = Parser::new(packet.data);
+            let parsedPacket = parser.parse_packet().unwrap();
+            println!(
+                "{:#?} | {:#?} | {:#?} | {:#?} | {:#?} |",
+                parsedPacket.Networkacceslayer, parsedPacket.Internetlayer, parsedPacket.Transportlayer, parsedPacket.Presentationlayer, parsedPacket.Applicationlayer
+            );
+        }
+        
+        c = c + 1;
+    }
+}
+
+pub fn parse_file(filename: &str, save_path: Option<&str>) {
+    print_coloums();
+    //let mut buffer = File::create("foo.txt").unwrap();
+   
+    let mut c = 1;
+    let mut start_capture = Capture::from_file(filename).unwrap();
+    while let Ok(packet) = start_capture.next() {
+        let parser = lightParser::new(packet.data);
+        let parsedPacket = parser.parse_packet().unwrap();
+        println!(
+            "{} | {:?} | {:?} | {:#?} | {:?} | {:?} |",
+            c,parsedPacket.source, parsedPacket.source, packet.header.ts.tv_sec, parsedPacket.protocol, parsedPacket.info
+        ); 
+        /*let pack = buffer.print(
+            "{} | {:?} | {:?} | {:#?} | {:?} | {:?} |",
+            c,parsedPacket.source, parsedPacket.source, packet.header.ts.tv_sec, parsedPacket.protocol, parsedPacket.info
+        );*/ 
+        //buffer.write(pack).unwrap();
+        c = c + 1;
+    }
+}
+
+
+pub fn choose_protocol(filename: &str, protocol: &str, save_path: Option<&str>) {
+    print_coloums();
+    let mut c = 1;
+    let mut start_capture = Capture::from_file(filename).unwrap();
+    while let Ok(packet) = start_capture.next() {
+        let parser = lightParser::new(packet.data);
+        let parsedPacket = parser.parse_packet().unwrap();
+        if parsedPacket.protocol == protocol {
+            println!(
+                "{} | {:?} | {:?} | {:#?} | {:?} | {:?} |",
+                c,parsedPacket.source, parsedPacket.source, packet.header.ts.tv_sec, parsedPacket.protocol, parsedPacket.info
+            );
+        }
+        c = c + 1;
+    }
+}
+
+
+
 
 pub fn device_list() -> Vec<String> {
     let devices: Vec<String> = Device::list().unwrap().iter().map(|val| val.name.clone()).collect();
@@ -126,5 +195,13 @@ pub fn device_list() -> Vec<String> {
 pub fn get_default_device() -> Device {
     let main_device = Device::lookup().unwrap();
     return main_device
+}
+
+fn print_coloums() {
+    println!(
+        "{0: <5} | {1: <15} | {2: <15} | {3: <25} | {4: <15} | {5: <25} |",
+        "Number","Source IP", "Dest IP", "Timestamp", "Protocol", "Info"
+    );
+    println!("{:-^1$}", "-", 165,);
 }
 
