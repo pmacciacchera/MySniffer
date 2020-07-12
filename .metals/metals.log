@@ -1,0 +1,11 @@
+2020.07.12 09:09:31 INFO  started: Metals version 0.9.1 in workspace '/home/acer/ProgettoIN490/MySniffer'
+2020.07.12 09:09:33 INFO  time: initialize in 1.59s
+2020.07.12 09:09:42 WARN  no build tool detected in workspace '/home/acer/ProgettoIN490/MySniffer'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 
+lug 12, 2020 9:17:48 AM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFORMAZIONI: Unsupported notification method: $/setTraceNotification
+lug 12, 2020 9:17:57 AM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFORMAZIONI: Unsupported notification method: $/setTraceNotification
+lug 12, 2020 9:35:38 AM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFORMAZIONI: Unsupported notification method: $/setTraceNotification
+lug 12, 2020 9:38:27 AM org.eclipse.lsp4j.jsonrpc.services.GenericEndpoint notify
+INFORMAZIONI: Unsupported notification method: $/setTraceNotification

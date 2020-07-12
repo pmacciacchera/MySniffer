@@ -1,8 +1,5 @@
-use clap::{App, Arg, ArgMatches, SubCommand};
-use pcap::{Capture, Inactive};
-use std::cell::RefCell;
 use crate::lib::packet_capture::*;
-
+use clap::{App, Arg, ArgMatches, SubCommand};
 
 
 fn is_i32(val: String) -> Result<(), String> {
@@ -11,7 +8,6 @@ fn is_i32(val: String) -> Result<(), String> {
         Err(err) => Err(err.to_string()),
     }
 }
-
 
 pub struct CaptureSubcommand {}
 
@@ -67,11 +63,9 @@ impl<'a, 'b> CaptureSubcommand {
     }
 
     pub fn set_args(&self, args: &ArgMatches) -> CaptureBuilder {
-        
         let mut builder = CaptureBuilder::new();
-        
+
         if let Some(val) = args.value_of("timeout") {
-            
             builder.set_timeout(val.parse().unwrap());
         }
         if let Some(val) = args.value_of("promisc") {
@@ -85,5 +79,4 @@ impl<'a, 'b> CaptureSubcommand {
         }
         return builder;
     }
-        
 }

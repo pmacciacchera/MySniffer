@@ -2,13 +2,9 @@ mod capture;
 mod parse;
 
 use clap::{crate_authors, crate_description, crate_name, crate_version, App};
-use pcap::{Capture, Device};
-
-use crate::args::capture::{CaptureSubcommand};
+use crate::args::capture::CaptureSubcommand;
 use crate::args::parse::ParseSubcommand;
 use crate::lib::packet_capture::*;
-
-
 
 pub fn parse_arguments() {
     let capture_subcommand = CaptureSubcommand::new();
@@ -22,16 +18,13 @@ pub fn parse_arguments() {
         .subcommand(parse_subcommand.get_subcommand())
         .get_matches();
 
-    
-
-    
     if let Some(sub) = matches.subcommand_matches("capture") {
         if sub.subcommand_matches("list").is_some() {
             device_list();
         } else if let Some(run_args) = sub.subcommand_matches("run") {
-            let CaptureDevice = capture_subcommand.set_args(run_args);
+            let capture_device = capture_subcommand.set_args(run_args);
             let device;
-            
+
             if let Some(handle) = run_args.value_of("device") {
                 //cambio device;
                 device = handle;
@@ -39,13 +32,12 @@ pub fn parse_arguments() {
                 device = "get_default_device";
             }
 
-            let Start = CaptureDevice.finalize();
+            let start = capture_device.finalize();
             if let Some(file) = run_args.value_of("savefile") {
-                capture_to_file(Start,device,file);
+                capture_to_file(start, device, file);
             } else {
-                streaming_capture(Start, device);
+                streaming_capture(start, device);
             }
-            
         }
     }
 
